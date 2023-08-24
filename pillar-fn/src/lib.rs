@@ -1,14 +1,17 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
+use std::future::Future;
+
+pub trait FnOnce<T> {
+    type Output;
+    fn call_once(self, arg: T) -> Self::Output;
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+pub trait Fn<T> {
+    type Output;
+    fn call(&self, arg: T) -> Self::Output;
+}
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
+pub trait AsyncFn<T> {
+    type Output;
+    type Future<U>: Future<Output = U>;
+    fn call(&self, arg: T) -> Self::Future<Self::Output>;
 }
