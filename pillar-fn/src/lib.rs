@@ -26,9 +26,9 @@ mod test {
     use crate::AsyncFn;
     use std::future;
 
-    fn test(f: impl AsyncFn<i32>) {}
+    fn test(_f: impl AsyncFn<i32>) {}
 
     fn test2() {
-        test(|x| future::ready(1))
+        test(|_x| future::ready(1))
     }
 }
