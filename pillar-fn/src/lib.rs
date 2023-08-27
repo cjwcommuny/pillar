@@ -13,8 +13,8 @@ where
     F: Fn(T) -> Fut,
     Fut: Future<Output = U>,
 {
-    type Output = U;
     type Future = Fut;
+    type Output = U;
 
     fn call(&self, arg: T) -> Self::Future {
         self(arg)
@@ -23,8 +23,9 @@ where
 
 #[cfg(test)]
 mod test {
-    use crate::AsyncFn;
     use std::future;
+
+    use crate::AsyncFn;
 
     fn test(_f: impl AsyncFn<i32>) {}
 
