@@ -4,10 +4,12 @@ use crate::ready::Already;
 
 pub trait Service<Request> {
     type Error;
-    type Future: Future<Output = Result<Self::Response, Self::Error>>;
+    type Future<'a>: Future<Output = Result<Self::Response, Self::Error>>
+    where
+        Self: 'a;
     type Response;
 
-    fn call(&self, arg: Request) -> Self::Future;
+    fn call(&self, arg: Request) -> Self::Future<'_>;
 
     fn already(self) -> Already<Self>
     where
@@ -22,10 +24,10 @@ where
     S: Service<Request>,
 {
     type Error = S::Error;
-    type Future = S::Future;
+    type Future<'a> = S::Future<'a> where Self: 'a;
     type Response = S::Response;
 
-    fn call(&self, arg: Request) -> Self::Future {
+    fn call(&self, arg: Request) -> Self::Future<'_> {
         (*self).call(arg)
     }
 }
@@ -44,10 +46,10 @@ where
     Fut: Future<Output = Result<Response, Error>>,
 {
     type Error = Error;
-    type Future = Fut;
+    type Future<'a> = Fut where Self: 'a;
     type Response = Response;
 
-    fn call(&self, arg: Request) -> Self::Future {
+    fn call(&self, arg: Request) -> Self::Future<'_> {
         (&self.0)(arg)
     }
 }

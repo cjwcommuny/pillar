@@ -15,12 +15,15 @@ pub struct Timeout<S> {
 impl<S, Request> Service<Request> for Timeout<S>
 where
     S: Service<Request>,
+    S::Error: 'static,
+    Request: 'static,
+    S::Response: 'static,
 {
     type Error = Error<S::Error>;
-    type Future = impl Future<Output = Result<Self::Response, Self::Error>>;
+    type Future<'a> = impl Future<Output = Result<Self::Response, Self::Error>> + 'a where Self: 'a;
     type Response = S::Response;
 
-    fn call(&self, arg: Request) -> Self::Future {
+    fn call(&self, arg: Request) -> Self::Future<'_> {
         let response = self.inner.call(arg);
         let sleep = tokio::time::sleep(self.timeout);
         let race = (response.map(Either::Left), sleep.map(Either::Right)).race();

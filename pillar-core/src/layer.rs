@@ -1,14 +1,16 @@
+use pillar_fn::func;
+
 pub trait Layer<A> {
     fn layer<F, B>(self, f: F) -> B
     where
-        F: FnOnce(A) -> B;
+        F: func::FnOnce<A, Output = B>;
 }
 
 impl<A> Layer<A> for A {
     fn layer<F, B>(self, f: F) -> B
     where
-        F: FnOnce(A) -> B,
+        F: func::FnOnce<A, Output = B>,
     {
-        f(self)
+        f.call_once(self)
     }
 }
