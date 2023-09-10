@@ -1,19 +1,14 @@
-pub trait Layer<A, B, T> {
-    fn layer<F>(self, f: F) -> T
+pub trait Layer<A> {
+    fn layer<F, B>(self, f: F) -> B
     where
         F: FnOnce(A) -> B;
 }
 
-impl<A, B> Layer<A, B, B> for A {
-    fn layer<F>(self, f: F) -> B
+impl<A> Layer<A> for A {
+    fn layer<F, B>(self, f: F) -> B
     where
         F: FnOnce(A) -> B,
     {
         f(self)
     }
 }
-// S -> (S -> S) -> S
-// R -> (R -> R) -> R
-// R -> (S -> S) -> R
-// S -> (R -> R) -> R
-// (() -> A -> B) -> ((A -> B) -> (C -> D)) -> (() -> C -> D)

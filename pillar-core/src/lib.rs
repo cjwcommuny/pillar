@@ -2,10 +2,6 @@
 #![feature(impl_trait_in_assoc_type)]
 #![feature(never_type)]
 
-use crate::layer::Layer;
-use crate::ready::Ready;
-use crate::service::Service;
-
 pub mod layer;
 pub mod ready;
 pub mod service;

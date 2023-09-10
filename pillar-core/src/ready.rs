@@ -1,23 +1,30 @@
 use std::future;
-use std::future::Future;
 
-pub trait Ready<T> {
+use futures::{TryFuture, TryFutureExt};
+
+pub trait Ready {
+    type Output<'a>
+    where
+        Self: 'a;
+
     type Error;
 
-    type TryFuture<'a, U>: Future<Output = Result<&'a U, Self::Error>>
+    type TryFuture<'a>: TryFuture<Ok = Self::Output<'a>, Error = Self::Error>
     where
-        Self: 'a,
-        U: 'a;
+        Self: 'a;
 
-    fn ready(&self) -> Self::TryFuture<'_, T>;
+    fn ready(&self) -> Self::TryFuture<'_>;
 }
 
-impl<T> Ready<T> for T {
-    type Error = !;
-    type TryFuture<'a, U> = future::Ready<Result<&'a U, Self::Error>> where Self: 'a, U: 'a;
+pub struct Already<T>(pub(crate) T);
 
-    fn ready(&self) -> Self::TryFuture<'_, T> {
-        future::ready(Ok(self))
+impl<T> Ready for Already<T> {
+    type Output<'a> = &'a T where Self: 'a;
+    type Error = !;
+    type TryFuture<'a> = future::Ready<Result<&'a T, Self::Error>> where Self: 'a;
+
+    fn ready(&self) -> Self::TryFuture<'_> {
+        future::ready(Ok(&self.0))
     }
 }
 
@@ -26,59 +33,16 @@ pub struct MapReady<R, F> {
     f: F,
 }
 
-type FF<A, B, E> = impl FnOnce(Result<A, E>) -> Result<B, E>;
-
-impl<A, B, R, F> Ready<B> for MapReady<R, F>
+impl<'c, R, F, B> Ready for MapReady<R, F>
 where
-    R: Ready<A>,
-    F: FnOnce(&A) -> &B,
+    R: Ready,
+    F: for<'b> Fn(R::Output<'b>) -> B + 'static,
 {
+    type Output<'a> = B  where Self: 'a;
     type Error = R::Error;
-    type TryFuture<'a, U> = futures::future::Map<R::TryFuture<'a, A>, FF<&'a A, &'a B, Self::Error>>
-        where
-            Self: 'a,
-            U: 'a;
+    type TryFuture<'a> = futures::future::MapOk<R::TryFuture<'a>, &'a F> where Self: 'a;
 
-    fn ready(&self) -> Self::TryFuture<'_, B> {
-        todo!()
+    fn ready(&self) -> Self::TryFuture<'_> {
+        self.inner.ready().map_ok(&self.f)
     }
 }
-
-// impl<A, B, R, F, O> Ready<B> for MapReady<R, F>
-// where
-//     R: Ready<A>,
-//     F: FnOnce(R::Output<'_, A>) -> O,
-// {
-//     type Error = R::Error;
-//     type Output<'a, U> = O where Self: 'a, U: 'a;
-//     type Future<'a, U>
-//     where
-//         Self: 'a,
-//         U: 'a;
-//
-//     fn ready(&self) -> Self::Future<'_, B> {
-//         todo!()
-//     }
-// }
-
-// pub trait ReadyExt<T>: Ready<T> {
-//     fn map<U, F>(self, f: F) -> MapReady<T, Self, F>
-//     where
-//         F: FnOnce(T) -> U,
-//     {
-//         todo!()
-//     }
-// }
-
-// impl<A, B, R1, R2> Layer<A, B, R2> for R1
-// where
-//     R1: Ready<A>,
-//     R2: Ready<B>,
-// {
-//     fn layer<F>(self, f: F) -> R2
-//     where
-//         F: FnOnce(A) -> B,
-//     {
-//         todo!()
-//     }
-// }
