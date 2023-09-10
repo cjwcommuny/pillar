@@ -14,3 +14,5 @@ impl<A> Layer<A> for A {
         f.call_once(self)
     }
 }
+// (s -> s) => (ready s -> ready s)
+//

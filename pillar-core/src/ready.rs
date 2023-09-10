@@ -46,3 +46,19 @@ where
         self.inner.ready().map_ok(&self.f)
     }
 }
+
+pub struct ReadyFn<F>(F);
+
+impl<F, O, E, Fut> Ready for ReadyFn<F>
+where
+    F: Fn() -> Fut,
+    Fut: TryFuture<Ok = O, Error = E>,
+{
+    type Output<'a> = O where Self: 'a;
+    type Error = E;
+    type TryFuture<'a> = Fut where Self: 'a;
+
+    fn ready(&self) -> Self::TryFuture<'_> {
+        self.0()
+    }
+}
